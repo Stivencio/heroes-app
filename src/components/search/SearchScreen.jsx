@@ -1,9 +1,9 @@
-import React from "react";
+import React, { useMemo } from "react";
 import queryString from "query-string";
 import { useLocation } from "react-router-dom";
-import { heroes } from "../../data/heroes";
 import { useForm } from "../../hooks/useForm";
 import { HeroCard } from "../heroes/HeroCard";
+import { getHeroesByName } from "../../selectors/getHeroesByName";
 
 export const SearchScreen = ({ history }) => {
 	//location es un hook de React Router, sirve para obtener algunos parametros como el pathname, search, etc.
@@ -11,16 +11,15 @@ export const SearchScreen = ({ history }) => {
 	//queryString parsea todos los parametros de la url y los separa en un objeto para manipularlos de mejor forma, en este caso solo vamos a utilizar el primer parametro que definimos como "q" de "query" y le damos el valor '' en caso de que no reciba ningun parametro, para que no quede en null
 	const { q = "" } = queryString.parse(location.search);
 
-	const [formValues, handleInputChange, reset] = useForm({
+	const [formValues, handleInputChange] = useForm({
 		searchText: q,
 	});
 	const { searchText } = formValues;
-	const heroesFiltered = heroes;
+	const heroesFiltered = useMemo(() => getHeroesByName(q.toLocaleLowerCase()), [q]);
 
 	const handleSearch = (e) => {
 		e.preventDefault();
 		history.push(`?q=${searchText}`);
-		console.log(searchText);
 	};
 
 	return (
@@ -54,6 +53,15 @@ export const SearchScreen = ({ history }) => {
 				<div className="col-7">
 					<h4>Results</h4>
 					<hr />
+
+					{q === "" && <div className="alert alert-info">Search a hero</div>}
+
+					{
+					
+					(q !== "" && heroesFiltered.length === 0) 
+					&& 
+						<div className="alert alert-danger">there is no hero with the name "{q}"</div>
+					}
 
 					{heroesFiltered.map((hero) => (
 						<HeroCard key={hero.id} {...hero} />
